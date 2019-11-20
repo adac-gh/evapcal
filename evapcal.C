@@ -12,24 +12,26 @@
 #include <TTree.h>
 #include <TFile.h>
 
-const double AMU = 931.4941; // unified atomic mass unit
+const double AMU = 931.4941;
 const double PI = 3.1415926;
+const double CUTOFF = 0.999; // cut off probability
+const int ALPHA = 3; // decay mode id
 
 // struct for one nucleus
 struct Nucleus
 {
   int nid;     // nucleus ID
-  int spin;    // spin variable
+  int spin2;   // spin*2 (doubled nuclear spin)
   int parity;  // parity 1=+, 2=-
   int isospin; // isospin 1=T<, 2=T>
   double Ex;   // Excitation energy
   double mass; // stationary mass in MeV
-  double Ekin; // kinetic energy for the decaying nucleus
+  double Ekin; // kinetic energy of the decaying nucleus
 
   // operator to compare the nuclei
   bool operator==(const Nucleus& nucl) const{
     return (nid == nucl.nid &&
-	    spin == nucl.spin &&
+	    spin2 == nucl.spin2 &&
 	    parity == nucl.parity &&
 	    isospin == nucl.isospin &&
 	    Ex == nucl.Ex);
@@ -42,6 +44,7 @@ struct Decay
   Nucleus mother;
   Nucleus daughter;
   int decaymode;
+  int minj;     // minimum J transfer
   double prob;  // decay probability from the mother to the daughter
 };
 
@@ -52,6 +55,9 @@ int main(int argc, char* argv[]){
   if( argc !=3 ){
     std::cout << " Error for the usage of the program "
 	      << std::endl;
+    std::cout << "  Usage: ./evapcal <Number of events> <Excitation energy>"
+	      << std::endl;
+    std::cout << "Example: ./evapcal 10000 23.5" << std::endl;
     exit(-1);
   }
   // number of events to be generated
@@ -80,35 +86,32 @@ int main(int argc, char* argv[]){
 
   Decay oneDecay;
   std::vector<Decay> decayList;
-  Nucleus mother, daughter, gdaughter, ggdaughter;
-  Nucleus particle1, particle2, particle3;
+  Nucleus mother, daughter;
+  Nucleus particle;
   double decaymode;
   double prob;
-  double p2; // momentum squared
-  // p2pcm: p2 in cm system of daughter, p2pp: p2 of particle2 in lab system
-  double p2pcm, p2pp;
-  // velocity of particle2 in lab system
-  double vpp;
-  // p2ppcm: p2 in cm system of gdaughter, p2ppp: p2 of particle3 in lab system
-  double p2ppcm, p2ppp;
-  // velocity of particle3 in lab system
-  double vppp;
+  // p2pcm: momentum squared(p2) in cm system of mother
+  double p2cm;
+  // p2pp: momentum squared(p2) of particle in lab system
+  double p2p;
+  // velocity of particle in lab system
+  double vp;
 
   // normalization factor
   double normfact;
   double dummy;
 
   // random number storage
-  double rdecay1, rdecay2, rdecay3;
-  double theta;
+  double rdecay = 0.0;
+  double theta = 0.0;
 
 
   //------------------------------------------------------------------
   // for root file
   // M_ne20 - M_o16 - M_alpha
-  const double qvalue = -7.0419 - (-4.7370 + 2.4249);
-  double mo16 = AMU * 16.0 - 4.7370;
-  double ma = AMU * 4.0 + 2.4249;
+  const double qvalue = calcMass(1)-calcMass(7)-calcMass(-3);
+  double mo16 = calcMass( 7 );
+  double ma = calcMass( -3 );
   double ex = energy;
   double exo;
 
@@ -120,12 +123,16 @@ int main(int argc, char* argv[]){
   int totalevent = nevent;
   int evtnum=0;
   int motherid=0;
+  int daughterid=0;
+  int minjt=0;
   int chain=0;
   int pid = 0;
   double pEkin=0.0;
   tree->Branch("totalevent", &totalevent, "totalevent/I");
   tree->Branch("evtnum", &evtnum, "evtnum/I");
   tree->Branch("motherid", &motherid, "motherid/I");
+  tree->Branch("daughterid", &daughterid, "daughterid/I");
+  tree->Branch("minjt", &minjt, "minjt/I");
   tree->Branch("chain", &chain, "chain/I");
   tree->Branch("pid", &pid, "pid/I");
   tree->Branch("pEkin", &pEkin, "pEkin/D");
@@ -135,12 +142,12 @@ int main(int argc, char* argv[]){
 
   dummy = calcMass( 1 );
   // 20Ne Ex = (energy) MeV well-defined one state
-  const Nucleus ne20 = {1, 1, 1, 1, energy, dummy, 0.0};
+  const Nucleus ne20 = {1, 0, 1, 1, energy, dummy, 0.0};
 
   // read the input file
   while( !ifs.eof() ){
     ifs >> mother.nid >> daughter.nid >> decaymode
-	>> mother.spin >> daughter.spin
+	>> mother.spin2 >> daughter.spin2
 	>> mother.parity >> mother.isospin
 	>> daughter.parity >> daughter.isospin
 	>> dummy >> dummy >> mother.Ex
@@ -158,6 +165,7 @@ int main(int argc, char* argv[]){
     oneDecay.mother = mother;
     oneDecay.daughter = daughter;
     oneDecay.decaymode = decaymode;
+    oneDecay.minj = (int)(fabs(daughter.spin2-mother.spin2)/2.0);
     oneDecay.prob = prob;
 
     // Next line is neccesary because of the specification of eof function.
@@ -170,206 +178,97 @@ int main(int argc, char* argv[]){
   srand( (unsigned int)time(NULL) );
 
 
+  // event generator loop
   for(int i=0;i<nevent;i++){
     evtnum = i+1;
-  
-    // summation for the decay from 20Ne Ex = 23.5 well-defined one state
-    prob = 0.0;
-    normfact = 0.0;
-    for(std::vector<Decay>::iterator itr = decayList.begin();
-	itr != decayList.end();itr++){
-      oneDecay = *itr;
-      if( oneDecay.mother==ne20 ){
-	prob += oneDecay.prob;
-      }
-    }
-    normfact = prob; // normalization factor
 
-    // random number generator [0.0,1.0)
-    rdecay1 = (double)rand()/RAND_MAX;
-    // random decay from 20Ne
-    prob = 0.0;
-    for(std::vector<Decay>::iterator itr = decayList.begin();
-	itr != decayList.end();itr++){
-      oneDecay = *itr;
-      if( oneDecay.mother==ne20 ){
-	prob += oneDecay.prob/normfact;
-      }
-      if( rdecay1 < prob ){
-	break;
-      }
-    }
-    mother = ne20;
-    daughter = oneDecay.daughter;
-
-    // calculation of the kinematic of the first decay
-    mother.mass = calcMass( mother.nid );
-    daughter.mass = calcMass( daughter.nid );
-    particle1.nid = - (oneDecay.decaymode);
-    particle1.mass = calcMass( particle1.nid );
-    // For the first decay, 20Ne is static. So, it's simple.
-    p2 = ((mother.Ex-daughter.Ex) + (mother.mass-daughter.mass-particle1.mass))
-      *(2.0*daughter.mass*particle1.mass)/(daughter.mass+particle1.mass);
-    daughter.Ekin = p2 / (2.0*daughter.mass);
-    particle1.Ekin = p2 / (2.0*particle1.mass);
-    if( oneDecay.decaymode == 3 ){
-      ofs << std::setw(8) << i
-	  << std::setw(5) << 1
-	  << std::setw(5) << mother.nid
-	  << std::setw(12) << std::setprecision(5)
-	  << std::fixed << particle1.Ekin
-	  << std::endl;
-      exo = ex + qvalue - particle1.Ekin - ma/mo16 * particle1.Ekin;
-      h1->Fill( particle1.Ekin );
-      h2->Fill( exo );
-    }
-    // for root
-    motherid = mother.nid;
-    chain = 1;
-    pid = oneDecay.decaymode;
-    pEkin = particle1.Ekin;
-    exo = ex + qvalue - pEkin - ma/mo16 * pEkin;
-    tree->Fill();
-
-    // summation for the decay from the daughter nucleus
-    prob = 0.0;
-    normfact = 0.0;
-    for(std::vector<Decay>::iterator itr = decayList.begin();
-	itr != decayList.end();itr++){
-      oneDecay = *itr;
-      if( oneDecay.mother==daughter ){
-	prob += oneDecay.prob;
-      }
-    }
-    normfact = prob; // normalization factor
-    if( normfact < 0.999 ) {
-      // Here exsits some cutoff... (due to the code CASCADE)
-    } else {
-
-      // random number generator [0.0,1.0)
-      rdecay2 = (double)rand()/RAND_MAX;
-      // random decay from the daughter
-      prob = 0.0;
-      for(std::vector<Decay>::iterator itr = decayList.begin();
-	  itr != decayList.end();itr++){
-	oneDecay = *itr;
-	if( oneDecay.mother==daughter ){
-	  prob += oneDecay.prob/normfact;
-	}
-	if( rdecay2 < prob ){
-	  break;
-	}
-      }
-      gdaughter = oneDecay.daughter;
-
-      // calculation of the kinematics of the second decay
-      daughter.mass = calcMass( daughter.nid );
-      gdaughter.mass = calcMass( gdaughter.nid );
-      particle2.nid = - (oneDecay.decaymode);
-      particle2.mass = calcMass( particle2.nid );
-      // momentum squared in CM system of daughter nucleus
-      p2pcm = ((daughter.Ex-gdaughter.Ex) + (daughter.mass-gdaughter.mass-particle2.mass))
-	*(2.0*gdaughter.mass*particle2.mass)/(gdaughter.mass+particle2.mass);
-      // random number generator [0.0,PI)
-      theta = (double)rand()/RAND_MAX * PI;
-      // Ekin of particle2 in lab system
-      vpp = sqrt( pow( sqrt(p2pcm)/particle2.mass*sin(theta), 2.0 )
-		  + pow( sqrt(p2pcm)/particle2.mass*cos(theta)
-			 - sqrt(2.0*daughter.Ekin/daughter.mass), 2.0 ) );
-      p2pp = pow(particle2.mass * vpp, 2.0);
-      particle2.Ekin = p2pp / (2.0*particle2.mass);
-      // Ekin of gdaughter in lab system
-      gdaughter.Ekin = (daughter.Ex-gdaughter.Ex)
-	+ (daughter.mass-gdaughter.mass-particle2.mass)
-	- particle2.Ekin;
-      if( gdaughter.Ekin<0.0 ) gdaughter.Ekin = 0.0;
-      if( oneDecay.decaymode == 3 ){
-	ofs << std::setw(8) << i
-	    << std::setw(5) << 2
-	    << std::setw(5) << daughter.nid
-	    << std::setw(12) << std::setprecision(5)
-	    << std::fixed << particle2.Ekin
-	    << std::endl;
-	exo = ex + qvalue - particle2.Ekin - ma/mo16 * particle2.Ekin;
-	h1->Fill( particle2.Ekin );
-	h2->Fill( exo );
-      }
-      motherid = daughter.nid;
-      chain = 2;
-      pid = oneDecay.decaymode;
-      pEkin = particle2.Ekin;
-      exo = ex + qvalue - pEkin - ma/mo16 * pEkin;
-      tree->Fill();
-
-      // summation for the decay from the gdaughter nucleus
+    // decay chain loop
+    chain = 0;
+    while(1){
+      chain++;
       prob = 0.0;
       normfact = 0.0;
+
+      if( chain==1 ){
+	mother = ne20;
+      } else {
+	mother = daughter;
+      }
+      
       for(std::vector<Decay>::iterator itr = decayList.begin();
 	  itr != decayList.end();itr++){
 	oneDecay = *itr;
-	if( oneDecay.mother==gdaughter ){
+	if( oneDecay.mother==mother ){
 	  prob += oneDecay.prob;
 	}
       }
       normfact = prob; // normalization factor
-      if( normfact < 0.999 ) {
-	;
-      } else {
-	rdecay3 = (double)rand()/RAND_MAX;
-	// random decay from the gdaughter
-	prob = 0.0;
-	for(std::vector<Decay>::iterator itr = decayList.begin();
-	    itr != decayList.end();itr++){
-	  oneDecay = *itr;
-	  if( oneDecay.mother==gdaughter ){
-	    prob += oneDecay.prob/normfact;
-	  }
-	  if( rdecay3 < prob ){
-	    break;
-	  }
+      // If the probabolity is below the cutofff,
+      // the decay is not possible and skip this chain.
+      if( normfact < CUTOFF ) break;
+      
+      // random number generator [0.0,1.0)
+      rdecay = (double)rand()/RAND_MAX;
+      // random decay from 20Ne
+      prob = 0.0;
+      for(std::vector<Decay>::iterator itr = decayList.begin();
+	  itr != decayList.end();itr++){
+	oneDecay = *itr;
+	if( oneDecay.mother==mother ){
+	  prob += oneDecay.prob/normfact;
 	}
-	ggdaughter = oneDecay.daughter;
-	gdaughter.mass = calcMass( gdaughter.nid );
-	ggdaughter.mass = calcMass( ggdaughter.nid );
-	particle3.nid = - (oneDecay.decaymode);
-	particle3.mass = calcMass( particle3.nid );
-	// momentum squared in CM system of daughter nucleus
-	p2ppcm = ((gdaughter.Ex-ggdaughter.Ex) + (gdaughter.mass-ggdaughter.mass-particle3.mass))
-	  *(2.0*ggdaughter.mass*particle3.mass)/(ggdaughter.mass+particle3.mass);
-	// random number generator [0.0,PI)
-	theta = (double)rand()/RAND_MAX * PI;
-	// Ekin of particle3 in lab system
-	if( gdaughter.Ekin < 0) gdaughter.Ekin = 0.0;
-	vppp = sqrt( pow( sqrt(p2ppcm)/particle3.mass*sin(theta), 2.0 )
-		     + pow( sqrt(p2ppcm)/particle3.mass*cos(theta)
-			    - sqrt(2.0*gdaughter.Ekin/gdaughter.mass), 2.0 ) );
-	p2ppp = pow(particle3.mass * vppp, 2.0);
-	particle3.Ekin = p2ppp / (2.0*particle3.mass);
-	// Ekin of ggdaughter in lab system
-	ggdaughter.Ekin = (gdaughter.Ex-ggdaughter.Ex)
-	  + (gdaughter.mass-ggdaughter.mass-particle3.mass)
-	  - particle3.Ekin;
-	if( ggdaughter.Ekin<0.0 ) ggdaughter.Ekin = 0.0;
-	if( oneDecay.decaymode == 3 ){
-	  ofs << std::setw(8) << i
-	      << std::setw(5) << 3
-	      << std::setw(5) << gdaughter.nid
-	      << std::setw(12) << std::setprecision(5)
-	      << std::fixed << particle3.Ekin
-	      << std::endl;
-	  exo = ex + qvalue - particle3.Ekin - ma/mo16 * particle3.Ekin;
-	  h1->Fill( particle3.Ekin );
-	  h2->Fill( exo );
+	if( rdecay < prob ){
+	  break;
 	}
-	// for root
-	motherid = gdaughter.nid;
-	chain = 3;
-	pid = oneDecay.decaymode;
-	pEkin = particle3.Ekin;
-	exo = ex + qvalue - pEkin - ma/mo16 * pEkin;
-	tree->Fill();
-      } // end of the decision for the third decay
-    } // end of the decision for the second decay
+      }
+
+      daughter = oneDecay.daughter;
+      // calculation of the kinematic of the decay
+      mother.mass = calcMass( mother.nid );
+      daughter.mass = calcMass( daughter.nid );
+      particle.nid = - (oneDecay.decaymode);
+      particle.mass = calcMass( particle.nid );
+      // momentum squared in CM system of daughter nucleus
+      p2cm = ((mother.Ex-daughter.Ex) + (mother.mass-daughter.mass-particle.mass))
+	*(2.0*daughter.mass*particle.mass)/(daughter.mass+particle.mass);
+      // random number generator [0.0,PI)
+      theta = (double)rand()/RAND_MAX * PI;
+      // Ekin of particle in lab system
+      vp = sqrt( pow( sqrt(p2cm)/particle.mass*sin(theta), 2.0 )
+		  + pow( sqrt(p2cm)/particle.mass*cos(theta)
+			 - sqrt(2.0*mother.Ekin/mother.mass), 2.0 ) );
+      p2p = pow(particle.mass * vp, 2.0);
+      particle.Ekin = p2p / (2.0*particle.mass);
+      // Ekin of daughter in lab system
+      daughter.Ekin = (mother.Ex-daughter.Ex)
+	+ (mother.mass-daughter.mass-particle.mass)
+	- particle.Ekin;
+      // kinetic  energy cutoff
+      if( daughter.Ekin<0.0 ) daughter.Ekin = 0.0;
+      
+      // text file output
+      if( oneDecay.decaymode == ALPHA ){
+	ofs << std::setw(8) << i
+	    << std::setw(5) << chain
+	    << std::setw(5) << mother.nid
+	    << std::setw(12) << std::setprecision(5)
+	    << std::fixed << particle.Ekin
+	    << std::endl;
+	exo = ex + qvalue - particle.Ekin - ma/mo16 * particle.Ekin;
+	h1->Fill( particle.Ekin );
+	h2->Fill( exo );
+      }
+      // for root
+      motherid = mother.nid;
+      daughterid = daughter.nid;
+      minjt = oneDecay.minj;
+      pid = oneDecay.decaymode;
+      pEkin = particle.Ekin;
+      exo = ex + qvalue - pEkin - ma/mo16 * pEkin;
+      tree->Fill();
+
+    } // end of while loop (chain loop)
+
   } // end of event loop
 
 
