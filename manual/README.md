@@ -6,4 +6,5 @@ cascade_man.html (Hard copy of the web site)
 cascade_man.pdf (Hard copy of the web site)
 
 ## Paper
-Puhlhofer1976.pdf (CASCADE was written based on this paper)
+Puhlhofer1976.pdf (CASCADE was written based on this paper)  
+Thomas1964.pdf (original decay probability formula)
