@@ -1,0 +1,21 @@
+##  gitignore
+
+# execute file and etc
+evapcal
+evapcal.o
+
+# CASCADE files
+LEVDENS.TMP
+
+# output data file
+figure/
+dat/
+root/
+cascadeDump/
+
+# jobs
+job/
+
+# temporary file
+*.*~
+Makefile~
