@@ -4,7 +4,7 @@
 evapcal
 evapcal.o
 
-# CASCADE files
+# CASCADE temporary files
 LEVDENS.TMP
 
 # output data file
@@ -14,7 +14,7 @@ root/
 cascadeDump/
 
 # jobs
-job/
+job/go*.sh*
 
 # temporary file
 *.*~
