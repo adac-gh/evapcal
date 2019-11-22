@@ -6,6 +6,14 @@
 
 # CASCADE temporary files
 LEVDENS.TMP
+POPULMAT.TMP
+
+# CASCADE output files
+CASCADE.NEU
+CASCADE.PLO
+CASCADE.PRO
+CASCADE.OUT
+DUMP.OUT
 
 # output data file
 figure/
