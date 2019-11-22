@@ -16,10 +16,10 @@ CASCADE.OUT
 DUMP.OUT
 
 # output data file
+dat/*.dat
+cascadeDump/*.dat
 figure/
-dat/
 root/
-cascadeDump/
 
 # jobs
 job/go*.sh*
