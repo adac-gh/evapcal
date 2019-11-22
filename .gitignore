@@ -1,8 +1,8 @@
 ##  gitignore
 
 # execute file and etc
-evapcal
-evapcal.o
+#evapcal
+#evapcal.o
 
 # CASCADE temporary files
 LEVDENS.TMP
