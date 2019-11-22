@@ -1,0 +1,722 @@
+<HTML>
+<BODY bgcolor=oldlace>
+<header>
+<title>CASCDE</title>
+</header>
+
+<h1>CASCADE</h1>
+<h2>A Nuclear Evaporation Code</h2>
+
+<pre>
+	Written by F. Puhlhofer (version and report dated 1979)
+	Modified by E.F. Garman (May 1982)
+	Modified by F. Zwarts (August 1982)
+	modified by M.N. Harakeh (last modification July 1987)
+                    E-Mail harakeh@kvi.nl
+</pre>
+
+<ul><li>Introduction</ul>
+
+
+     The program CASCADE was written by F. Puhlhofer to perform evaporation
+calculations based upon the statistical theory of compound nucleus reactions
+[see F. Puhlhofer, Nucl.Phys.A280(1977)267]. The program was originally written
+for an IBM computer but was modified to run on the VAX by Garman and Zwarts.
+E.F. Garman modified the original version to include electric dipole gamma
+decay properly by introducing the giant dipole resonance (GDR) strength
+function and including gamma decay from the compound nucleus (not calculated at
+all in puehlhofer original version of CASCADE) according to recommendations by
+Puhlhofer. F. Zwarts then included parity in a simplified way to be able to
+perform calculations for special states of good spin and parity. Major changes
+were introduced by M.N. Harakeh to include isospin and parity properly in the
+statistical decay as well as electric quadrupole decay by including the
+quadrupole strength function for the isoscalar and isovector giant quadrupole
+resonances (GQR). These changes are documented in another report. Here only the
+description of the input cards is documented.
+     There are two versions of the program CASCADE available now: one version
+CASCIP that treats isospin and parity exactly and therefore is large and slow;
+another version CASCN which treats parity approximately and thus is about a
+factor four faster than CASCIP. Unless there is justification to use program
+CASCIP e.g. for light nuclei where isospin plays an important role in
+determining the branching ratios of proton, neutron, alpha and gamma decay,
+one should use the smaller and faster program CASCN.
+     Before running either version of the program CASCADE one should make
+sure that a table of binding energies (EBTABLE.DAT) of different nuclei
+and an appropriate table of transmission coefficients (TLCALC.DAT) are
+present. If not, then the programs EBTABLE and TL should be run. The input
+cards of these programs along with those of CASCADE are described below. All
+formats are free formats except where indicated. For the cards with free format
+the program expects a value to be entered for each parameter specified in the
+read statement.
+     The cards for the programs CASCN and CASCIP are compatible although CASCN
+does not necessarily use some of the information that is inputted. However, it
+is important that all parameters described below for the cards pertinent to the
+program CASCADE should be entered for both versions CASCN and CASCIP. Where
+appropriate, it is indicated which parameters are irrelevant for the program
+CASCN.
+
+
+<ul><li>INPUT CARDS FOR PROGRAM TL<br>
+     <b>CARD 1  Transmission coefficients parameters</b>
+    <ol>
+     
+    <li> IZMIN <br>
+	Minimum charge of the decaying nucleus for which transmission
+	coefficients are to be calculated.
+
+    <li>IZMAX  <br>
+	Maximum charge of the decaying nucleus for which transmission
+	coefficients are to be calculated (charge of the compound nucleus).
+
+    <li>KOUTP  <br>
+		= 0  Do not print parameters.<br>
+      .NE.0  Print optical model potential parameters (i.e. IZ,IACN,
+	     IZF,IEKIN,ECM,U,RR,ALR,WS,WD,RI,ALI,US,RS,AS,RC,LMAX).
+
+    <li>KOUTTL  <br>
+		= 0  Do not print transmission coefficients.<br>
+		= 1  Print transmission coefficients in F-format.<br>
+		= 2  Print transmission coefficients in E-format.<br>
+
+
+     <li>KSTORE  <br>
+	= 0  Do not store transmission coefficients on disk.<br>
+   .NE.0  Store transmission coefficients on disk for later use by CASCADE.<br>
+
+     <li>ESTEP   <br>
+        Energy step with which to calculate transmission coefficients
+	(default value: 1.0 MeV).
+     </ol> 
+     <b>CARD 2	Fourth particle parameters</b>
+     <ol>
+
+     <li>IZE(4)	<br>
+	Charge of the fourth particle to be included in the evaporation
+	calculation in addition to the proton, neutron and alpha.
+
+     <li>IAE(4)	<br>
+        = 0  No fourth particle.<br>
+	= A  Mass of the fourth particle.
+
+     <li>EBE4	<nr>
+        Total binding energy of the fourth particle (e.g. EBE for an
+	alpha particle is 28.297 MeV)
+
+     <li>CNZ	<br>
+	Constant for calculating neutron excess (N-Z = CNZ*Z**2 + 0.5).
+	(default value: 0.004).
+
+     </ol>
+     <b>CARD 3	Optical model potential options</b>
+     <ol>
+     <li>KPOTN	<br>
+	Option for neutron potential (default value: 1).<br>
+	= 1  From Rapaport et al., Nucl.Phys. A330(1979)15 [Set B].<br>
+    = 2  From Wilmore and Hodgson, Nucl.Phys. 55(1964)673. Not recommended.<br>
+	     For E &gt; 60 MeV KPOTN = 1 is used.
+
+     <li>KPOTP	<br>
+	Option for proton potential (default value: 1).<br>
+	= 1  From Becchetti and Greenlees, Phys.Rev. 182(1969)1190.<br>
+	= 2  From Perey, Phys.Rev. 131(1963)745. Not recommended.
+	     For E &gt; 60 MeV KPOTP = 1 is used.<br>
+
+     <li>KPOTA	<br>Option for alpha potential (default value: 1).<br>
+	= 1  From Satchler, Nucl.Phys. 70 (1965) 177.<br>
+	= 2  From McFadden and Satchler, Nucl.Phys. 84 (1966) 177.
+	     For E &gt; 100 MeV KPOTA = 1 is used.<br>
+   = 3  From Huizenga and Igo, Nucl.Phys. 29 (1962) 462. Not recommended.
+	     For E &gt; 60 MeV KPOTA = 1 is used.<br>
+
+     <li>KPOT4	<br>
+	Option for 4th particle potential (default value: 1).
+	All possible 4th particles have only one potential option except
+	for deuteron :<br>
+	= 1  From Perrin et al., Nucl.Phys. A282 (1977) 221.<br>
+	= 2  From Hinterberger et al., Nucl.Phys. A111 (1968) 265.<br>
+	= 3  From Daehnick et al., Phys.Rev. C21 (1980) 2253.<br>
+	= 4  From Lohr and Haeberli, Nucl.Phys. A232 (1974) 381.<br>
+
+	and 12C and 16O :<br>
+	= 1  A general heavy ion potential (for A.LE.20) obtained from
+	     Voos et al., Nucl.Phys. A135(1969)207.<br>
+	= 2  For 12C+12C from Gobbi et al. ANL report 7837 (1971).
+	     For 16O a general potential extracted from Perey and Perey.<br>
+	= 3  For 12C from Perey and Perey from 12C+28Si at 84 MeV.<br>
+     </ol>
+</ul>
+<ul><li>INPUT CARDS FOR PROGRAM EBTABLE<br>
+
+
+     <b>CARD 1	Binding energies control parameters</b>
+     <ol>
+
+     <li> KOPT	<br>
+	= 1  Theoretical masses for all particle-stable nuclei from the
+	     Myers-Swiatecki mass formula.<br>
+	= 2  Theoretical masses calculated using the droplet model mass
+	     formula by Hilf et al. Nucl.Phys. A203 (1973) 627.<br>
+	= 3  No option.<br>
+	= 4  Read in masses (measured and extrapolated) from KVI masstable
+	     MASSTABLE.SRT.<br>
+	= 5  Comparison of theoretical (Myers-Swiatecki) and measured masses
+	     (only lineprinter output).<br>
+	= 6  Same as 5 with Hilf masses	with the Lysekil constants
+	     [Arkiv for Fysik 36 (1966) 343].
+
+    <li>KPRINT	<br>
+	= 0  Do not print binding energies.<br>
+      .NE.0  Print binding energies for all nuclei
+
+    <li>KDISC	<br>
+	= 0  Do not store binding energies on disk.<br>
+      .NE.0  Store binding energies on disk for later usage by CASCADE.
+    </ul>
+</ul>
+<ul><li>INPUT CARDS FOR PROGRAM CASCADE (CASCN & CASCIP)<br>
+
+
+     <b>CARD 1	Title</b>
+     <ol>
+     <li>TITLE	Any alphanumeric title of 80 or less characters.<br>
+     </ol>
+     <b>CARD 2	Entrance channel</b>
+     <ol>
+     <li>IZP  <br>
+	Atomic number of projectile.
+
+     <li>IAP  <br>
+	Mass number of projectile.
+
+     <li>IZT  <br>
+	Atomic number of target nucleus.
+
+     <li>IAT  <br>
+	Mass number of target nucleus.
+
+     <li>ELAB  <br>
+	Beam energy in MeV. This is interpreted as the excitation energy of
+	the compound nucleus EXCN if JCN.GE.0 (see card 3) and if IAP = 0.
+     </ol>
+
+    <b>CARD 3	Spins, parity and isospin in entrance channel</b>
+    <ol>
+
+    <li>JP   <br>
+	Spin of projectile (twice the value for an odd nucleus).
+
+    <li>JT   <br>
+	Spin of target (twice the value for an odd nucleus).
+
+    <li>IP12  <br>
+	Product of intrinsic parities of target and projectile.<br>
+	= 0  For even parity in the entrance channel.<br>
+	= 1  For odd parity in the entrance channel.<br>
+	= 2  For identical 0+ nuclei.<br>
+	&lt; 0  For unknown parity in the entrance channel.<br>
+
+    <li>JCN   <br>
+	&lt; 0  Usual. The population in the CN is then calculated according to
+	     parameters of card 6.<br>
+      .GE.0  The CN population is assumed to be in one spin JCN with a
+	     population cross section of 1000 mb. The spin is JCN+1/2 for odd
+	     mass. The excitation energy EXCN = ELAB (card 2) if IAP = 0. This
+	     option is used for example, if one wants to study the influence of
+	     the angular momentum in the CN on the decay mode. The parameters
+	     on card 6 are then irrelevant but should be entered nevertheless.
+	     <br>
+      = 999  Then the CN population is read as a function of angular momentum,
+	     parity and isospin. Card 6 is skipped in this case and instead of
+	     it a number of cards are read. See further card 6.<br>
+
+    <li>ITZT<br>
+	= 1  For a T&lt; state of the compound nucleus if JCN.GE.0.<br>
+	= 2  For a T&gt; state of the compound nucleus if JCN.GE.0.<br>
+	This is irrelevant if JCN &lt; 0.<br>
+	This is irrelevant for program CASCN.<br>
+
+    <li>INDPAR<br>
+      = 0  Do not use option for different level densities of positive and
+       negative parities in even-even nuclei. Note that for nuclei other
+     than even-even the density of negative parity states as compared
+     to positive parity ones depends strongly on the mass region under
+     consideration.<br>
+	= 1  Use.<br>
+	This is irrelevant for program CASCN.
+
+    <li>INDIS<br>
+	= 0  Do not print either Clebsch-Gordon coefficients for gamma and
+	     particle decay or level densities.<br>
+	= 1  Print Clebsch-Gordon coefficients for gamma and particle decay
+	     for all steps of the cascade.<br>
+	= 2  Print total and cumulative level densities as function of
+	     excitation energy.<br>
+	= 3  Print level densities as function of excitation energy, spin,
+	     parity and isospin.<br>
+	= 9  Print all of the above (i.e. options 1, 2 and 3).<br>
+	In program CASCN only option 1 is irrelevant, however option 3 in this
+	case means print level densities as function of excitation energy and
+	spin.
+
+    <li>AMIX<br>
+	Parameter for isospin mixing, where isospin mixing is assumed to take
+	the simple form of linear dependence as a function of excitation
+	energy, i.e. isospin mixing = AMIX + BMIX*EX.<br>
+	This is irrelevant for program CASCN.
+
+    <li>BMIX<br>
+	Parameter for isospin mixing. See note above concerning AMIX.
+	This is irrelevant for program CASCN.
+  </ol>
+
+  <b>CARD 4	Structure of the decay cascade</b><br>
+	This card specifies the structure of the so-called decay cascade, which
+	contains all nuclei considered as possible decay products and defines
+	their sequence in the various decay chains. The parameters are usually
+	computed internally if all values are entered as zeros.
+  <ol>
+  <li>KOPTK <br>
+	Number of decay steps (for any combination of decays).<br>
+	= 0  Internal computation (= EXCN/12, but .GE.3).<br>
+      .GE.1  Internal computation with number of steps given. (check cross
+	     sections "last step above threshold").<br>
+	=99  The cascade structure is read in (between cards 13 and 14, check
+	     subroutine KASKAD).<br>
+  <li>IPS1<br>
+	Number of decaying nuclei (only for KOPTK = 99).
+
+  <li>IPSMAX<br>
+	Number of nuclei in the cascade (.LE.500) (only for KOPTK = 99).
+
+  <li>NNX <br>
+ 	Maximum excess of neutron minus proton emissions.
+
+  <li>NPX <br>
+	Same for proton emission.
+
+  <li>NAX<br>	Maximum number of alpha emissions.<p>
+
+	The last three parameters may be used to trim the wings of the decay
+	cascade in case of high excitation.
+  </ol>
+  <b>CARD 5	4th particle decay mode, fission</b><br>
+  <ol>
+
+  <li>IZE(4)<br>
+	Atomic number of the 4th particle to be taken into account in addition
+	to n-, p- and alpha emission. Make sure that the corresponding
+	transmission coefficients are available. No additional decay mode if
+	entered zero.
+
+  <li>IAE(4)<br>
+	Mass number of the 4th particle.
+
+  <li>JE(4)<br>
+	Spin of the 4th particle (twice the value for odd mass).
+
+  <li>IPE(4)<br>
+	Parity of the 4th particle.<br>
+	= 0  even.<br>
+	= 1  odd.<br>
+	Else unknown.<br>
+
+  <li>EXC4<br>
+	Excitation energy of 4th decay particle (since 4th decay particle may
+	come out in an excited state). In this case, JE(4) and IPE(4) are the
+	spin and parity of the excited state of the 4th decay particle.<br>
+
+  <li>IZFF<br>
+	= 0  No fission competition.<br>
+      .NE.0  With fission competition.
+
+  <li>DAF<br>
+	af = A/DAF = level density parameter at the saddle point (default
+	value: DALDM).
+
+  <li>FFB<br>
+	Fraction of the liquid-drop fission barrier (default value: 1.0).
+
+  </ol>
+  <b>CARD 6	Angular momentum distribution in the compound nucleus</b><br>
+
+  <b>CARD 6a Read only if JCN.NE.999</b>
+
+  <ol>
+  <li>CL0<br>
+	Maximum angular momentum (a very approximate value is calculated
+	internally if entered zero).
+
+  <li>DIFF<br>
+	Diffuseness (default value: 2 hbar).<br>
+  <li>NOTE:<br>
+ The transmission coefficient is given by the expression<br>
+ 
+<pre>
+                TL = 1/[1+Exp{(L-CL0)/DIFF}]
+	      and the total fusion cross section by
+		SIGMCN = Sum over L of SIGML
+	      where
+		SIGML = (2L+1)*TL.
+</pre>
+  <li>SIGMCN
+     Instead of CL0 the total fusion cross section (in mb) may be inserted.
+
+  </ol>
+  <b>CARDS 6b  Format(2A,I3,F8.0). Read only if JCN.EQ.999</b>
+  <ol>
+
+  <li>IP<br>
+	Parity of the CN populated levels.<br>
+	= + Positive parity.<br>
+	= - Negative parity.<br>
+	= E Skip to CARD 7.<br>
+   Any other character will stop the program with an error message.
+	This is irrelevant for program CASCN.
+
+  <li>IL<br>
+	Isospin of the CN populated levels.<br>
+	= &lt;  Lower isospin T&lt;.<br>
+	= &gt;  Upper isospin T&gt;.<br>
+	Any other character will stop the program with an error message.
+	This is irrelevant for program CASCN.
+
+  <li>J_TEMP<br>
+	Angular momentum of the CN populated levels (twice the value for
+	an odd compound nucleus).
+
+  <li>WT_TEMP<br>
+	Cross section of the CN populated levels (in mb).<br>
+
+  <li>NOTE:<br>
+  	 a maximum of L_DIM cards in CASCN and 4*L_DIM cards in CASCIP in
+	  an arbitrary order are allowed. If more cards are given they are
+	      ignored. If two or more cards give the population cross section
+	      for the same angular momentum, parity and isospin, the population
+	      cross sections are added. These cards are terminated by a card
+	      with E in the first column.
+   </ol>
+   <b>CARD 7	Level density parameters at low excitation (EX.LE.UTR)</b>
+   <ol>
+
+   <li>FTHETA<br>
+	Fraction of the rigid-sphere moment of inertia used as effective value
+	for calculating the yrast line at low excitation energy,
+	(default value: 0.85).
+
+   <li>KOPTLD<br>
+	Option for the level density parameters DA, DELTA (and CK).<br>
+	= 0  Interpolation of values of Dilg et al., Nucl.Phys.A217, for the
+	     mass range A &lt; 45.<br>
+	= 2  Same for A &gt; 45.
+   </ol>
+
+  <b>CARD 8	
+  Level density parameters at high excitation (liquid drop region,
+	EX.GE.ULDM)</b>
+  <ol>
+
+ <li>DALDM<br>
+	Level density parameter constant for ALDM = A/DALDM (1/MeV),
+	(default value: 8 MeV)
+
+  <li>UTR<br>	
+	Interpolation range between the low-energy region (.LE.UTR) and the
+  <li>ULDM<br>
+	liquid-drop region (.GE.ULDM). Valid for DA and DELTA,<br>
+	(default values: 60/A**(1/3) MeV and 120/A**(1/3) MeV, respectively).
+
+  <li>UJTR<br>
+	Same for the moment of inertia,
+  <li>UJLDM<br>
+	(default values: UTR and ULDM, respectively).
+
+  <li>KOPTLQ<br>
+	Level density parameter option.<br>
+	= 0  DALDM as above, DELTALDM corresponding to the liquid-drop g.s.<br>
+	= 1  Same parameters DA and DELTA as at low excitation.
+
+  <li>KOPTEB<br>
+	Option for liquid-drop mass formula.<br>
+	= 0  Myers-Swiatecki Lysekil.<br>
+	= 1  Myers, droplet model (recommended).<br>
+	= 2  Same with Wigner term.<br>
+	= 3  Groote, Hilf, Takahashi.<br>
+	= 4  Same with Wigner term<br>
+	= 5  Seeger.<br>
+	= 6  Same with Wigner term.
+   </ol>
+
+  <b>CARD 9	Yrast line</b>
+  <ol>
+
+
+  <li>R0LDM<br>
+	Radius parameter (in fm) for calculating the moment of inertia and the
+	spin cutoff parameter (default value: rms-radius from Myers, Nucl.Phys.
+	A204(1973)465).
+
+  <li>DEF<br>
+	Constants used for parameterizing the yrast line of a rotating liquid
+  <li>DEFS<br>
+	drop:   EROT = I(I+1)*hbar**2/(2J), J = J0(1+DEF*L**2+DEFS*L**4),
+	(default values are calculated internally to fit the Cohen, Plasil,
+	Swiatecki results).
+  </ol>
+
+   <b>CARD 10	  Gamma-decay widths</b>
+  <ol>
+
+  <li>XYE1<br>
+	E1 gamma-width in Weisskopf units (default value: .0001).
+  <li>NOTE:<br>
+	 if entered negative an extra card 10a is read for GDR parameters.
+
+  <li>XYM1<br>
+	M1 gamma-width in Weisskopf units (default value: .03).
+
+  <li>XYE2<br>
+	E2 gamma-width in Weisskopf units (default value: 5).
+  <li>NOTE:<br>
+	 If entered negative an extra card 10b is read for GQR parameters.
+	 In this case, however, ABS(XYE2)/EX is taken to be the E2
+	 strength up to 1/3 of the isoscalar GQR energy, after which the
+	 E2 strength is determined by the parameters of the isoscalar and
+	 isovector GQR's.
+
+  <li>CJG1<br>
+	Lower edge for spin transition range for E2 enhancement.
+
+  <li>CJG2<br>
+	Upper edge for spin transition range for E2 enhancement.
+
+  <li>XYENH<br>	Enhanced E2 strength in W.u. above CJG2.
+
+  <li>GMIN<br>
+	Minimum gamma-decay, GMIN*(XYE1+XYM1+XYE2). This is important only for
+	 the lower edge of the population matrix and determines how much
+		goes into isomer population. (default value: 1.E-6).
+
+  </ol>
+  <b>CARD 10a  GDR parameters (read in only if XYE1 &lt; 0)</b>
+  <ol>
+
+  <li>FGDR1<br>
+	Fraction of Classical E1 EWSR in relative units for the first
+	lorentzian.
+
+  <li>EGDR1<br>
+	Excitation energy of the first lorentzian in MeV.
+
+  <li>GGDR1<br>
+	Width of the first lorentzian in MeV.
+
+  <li>FGDR2<br>
+	Fraction of Classical E1 EWSR in relative units for the second
+	lorentzian.
+
+  <li>EGDR2<br>
+	Excitation energy of the second lorentzian in MeV.
+
+  <li>GGDR2<br>	Width of the second lorentzian in MeV.
+
+  </ol>
+  <b>CARD 10b  GQR parameters (read in only if XYE2 &lt; 0)</b>
+  <ol>
+
+  <li>FISQR<br>
+	Fraction of the isoscalar E2 EWSR in relative units for the isoscalar
+	GQR.
+
+  <li>EISQR<br>
+	Excitation energy of the isoscalar GQR in MeV.
+
+  <li>GISQR<br>
+	Width of the isoscalar GQR in MeV.
+
+  <li>FIVQR<br>
+	Fraction of the isovector E2 EWSR in relative units for the isovector
+	GQR.
+
+  <li>EIVQR<br>	Excitation energy of the isovector GQR in MeV.
+
+  <li>GIVQR<br>
+	Width of the isovector GQR in MeV.
+
+  </ol>
+  <b> CARD 11	  Cut-offs</b>
+  <ol>
+
+  <li>WGR<br>
+	Populations below the given value in any decaying nucleus are ignored,
+	(default value: 0.003 mb/MeV.hbar). Check lost cross sections.
+
+  <li>CGR<br>
+	Cutoff for the decay intensity of a (1*ESTEP)MeV.1hbar population
+	element in a specific channel (default value: 0.25*WGR).<br>
+
+	The following four parameters are used to control the upper energy
+	limit of the (L_EX_DIM*ESTEP).L_DIM MeV.hbar population matrices.
+
+  <li>CVCBE<br>
+	Fraction of the Coulomb barrier of an emitted charged particle assumed
+  as minimum kinetic energy (default value: 0.30, if EXCN &lt; 60 then 0.1).
+
+  <li>CVCB<br>	
+	Relative strength of the quadratic term (default value: 0.04).
+
+  <li>VK<br>
+	Minimum kinetic energy above Coulomb barrier (default value: EXCN/100).
+
+  <li>CVK<br>
+ 	Quadratic term (default value 0.05).
+
+  </ol>
+  <b>CARD 12	  Cut-offs</b>
+  <ol>
+
+  <li>EXR0<br>
+	EX-range of the population matrices in the first decay steps (default
+	value: KIN_PAR*ESTEP MeV).
+
+  <li>EXH<br>
+	Above this excitation energy a step size of 2 hbar in spin is used in
+	the decaying nucleus, above 2*EXH 3 hbar steps are used (default value:
+	30 MeV, unless IP12 = 2 or INDPAR = 1 in CASCIP and IP12 = 2 in CASCN
+	then EXCN + 1 MeV).
+	
+  <li>CJC<br>
+	Number of spin steps at the high-spin side of a population, where 1
+	hbar steps are used (default value: ACN/20, but .GE. 4).
+	CAUTION: The spin region with strongly varying fission competition
+		 should be covered with 1 hbar steps.
+
+  <li>LCO<br>
+	Angular momentum cutoff for all level densities (default value: CL0 +
+	2*DIFF).
+
+  <li>ESTEP<br>
+	Energy step (in MeV) with which to perform the calculations
+	(default value: 1.0 MeV).
+
+  </ol>
+  <b>CARD 13	  Output control</b>
+  <ol>
+
+
+  <li>KOUTW<br>
+	Lower cross section limit (in mb), above which population matrices
+	are printed (default value: 100mb).
+
+  <li>KOUTL<br>
+	Same for decay probabilities (default value: 1000 mb).
+
+  <li>KEVAP<br>
+	Same for evaporation spectra (default value: 1000 mb).
+
+  <li>KGAMMA<br>
+	= 0  Do not calculate gamma-decay below particle thresholds.<br>
+    .NE.0  Calculate gamma-decay below particle thresholds (important shape
+    of gamma spectrum at low energies and for gamma multiplicities).<br>
+   = 2  Calculate only particle and gamma spectra and population matrices
+	     following an initial gamma decay in the compound nucleus.<br>
+    =-2  Calculate only particle and gamma spectra and population matrices
+     following an initial 4th particle decay in the compound nucleus.
+  </ol>
+
+  <b>CARDS 13a Read in cascade structure (optional)</b><br>
+	Only if KOPTK = 99 and IPS1, IPSMAX specified (see card 4).
+	Input: IPSZO(IZF=1,4; IPS=1,IPS1) = assignment of numbers to the
+	daughter nuclei produced by n-, p-, alpha- and 4th decay (IZF=1,4) of
+	each decaying nucleus IPS = 1,IPS1 in the decay cascade. Defines
+	length of decay chains and order of computation. Insert 0 if decay
+	is to be neglected.<br>
+
+  <b>CARDS 14</b><br>
+  Individual level density parameters for low excitation energy
+	  (optional; except for a card where IZ = 0)</b>
+
+  <ol>
+  <li>IZ<br>
+	Atomic number Z.
+
+  <li>IA<br>
+	Mass number A.
+
+  <li>DA<br>
+	Constant for calculating the level density parameter a = A/DA,
+	(DA ~ 8 MeV).
+
+  <li>DELTA<br>
+	Zero of the thermal excitation energy for the g.s., U = EX - DELTA.
+
+  <li>FTHETA<br>
+	= J/Jrigid (like on card 7).
+
+  <li>CK<br>
+	Multiplicative constant in the level density (valid for the whole
+	excitation energy range).
+
+  <li>DELT<br>
+	Zero of the thermal excitation energy for the IAS.
+	This is irrelevant for program CASCN.<br>
+
+	One card for each nucleus; arbitrary number of cards; arbitrary order.
+	Overwrites internally calculated standard parameters. End defined by a
+	card on which IZ = 0. This card is always necessary.
+
+   </ol>
+   <b>CARDS 15  Individual spectra (optional; 
+	except for a card where IZZ = 0, or  an EOR card)</b> 
+
+	For each nucleus, for which low-lying levels are to be read in:<br>
+    <ul>
+	  <li>a) One card containing IZZ,IAA,EX
+	  <li>b) Cards containing EXL,JL,PL,IL; format 7(F7.2,I2,2A).
+    </ul>
+	     End defined by a blank card, or an EOR card.<br>
+
+	The input values are written, if they are needed, into a level table
+	(for a maximum of 99 nuclei). If two spectra are supplied for the same
+	or the mirror nucleus, the second overwrites the first one. A maximum
+	of 50 levels can be given (with arbitrary order except for yrast levels
+	or with interruption except for the first position on the card).<br>
+  
+  <b>CARD a</b>
+
+  <ol>
+  <li>IZZ<br>
+	Atomic number Z. 
+
+  <li>IAA<br>
+	Mass number A.
+
+  <li>EX<br>
+   Excitation energy (in MeV) below which the analytical level density is
+	erased and replaced by levels and above which the levels are
+	interpreted as yrast levels (level density erased above the spin of the
+	level). Yrast levels must be read in with increasing or constant spin
+	at increasing excitation energy.
+   </ol>
+   <b>CARDS b   Format(7(F7.2,I2,2A)</b>
+   <ol>
+  <li>EXL<br>
+	Level excitation energy in MeV.
+
+  <li>JL<br>
+	Level spin (twice for odd nuclei).
+
+  <li>PL<br>
+	Level parity.<br>
+	= +  Positive parity.<br>
+	= -  Negative parity.<br>
+	= 0  Or blank start reading cards for another nucleus (see card a).<br>
+	Any other character =&gt; undefined parity.
+
+  <li>IL<br>
+	Level isospin.<br>
+	= &lt;  Lower isospin T&lt;.<br>
+	= &gt;  Upper isospin T&gt;.<br>
+	Any other character will stop the program with an error message.
+	This is irrelevant for program CASCN.
+   </ol>
+</ul>
