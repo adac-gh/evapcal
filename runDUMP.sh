@@ -37,13 +37,13 @@ do
     # calculation for the template with the discrete states
     ##################################################################
     cat templateD.inp |	sed "s/23.500/$i/g" > tmpD.dat
-    ../../cascipm2 < tmpD.dat 2>/dev/null
+    ../cascademod/cascipm2 < tmpD.dat 2>/dev/null
 
     # store DUMP file to the directory
     mv -f ./DUMP.OUT ./cascadeDump/DUMP_$i.dat
 
     # remove temporaty/output files from CASCADE
-    rm -f POPULMAT.TMP LEVDENS.DAT
+    rm -f POPULMAT.TMP LEVDENS.TMP
     rm -f CASCADE.PLO CASCADE.NEU CASCADE.PRO
     rm -f CASCADE.OUT
 
